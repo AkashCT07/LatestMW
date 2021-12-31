@@ -27,16 +27,18 @@ namespace CosmosMW.Controllers
         private SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationSettings _appSettings;
         private IUserService _userService;
+        private IMessageService _messageservice;
         public IConfiguration Configuration { get; }
 
 
-        public ApplicationUserController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IOptions<ApplicationSettings> appSettings, IConfiguration configuration, IUserService userService)
+        public ApplicationUserController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IOptions<ApplicationSettings> appSettings, IConfiguration configuration, IUserService userService, IMessageService messageservice)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _appSettings = appSettings.Value;
             _userService = userService;
             Configuration = configuration;
+            _messageservice = messageservice;
         }
 
         //PatientRegistration
@@ -48,13 +50,13 @@ namespace CosmosMW.Controllers
             var applicationUser = new ApplicationUser()
             {
                 UserName = objRegistration.UserName,
-                Email = objRegistration.Email,
+                //Email = objRegistration.Email,
                 fullName = objRegistration.FirstName + objRegistration.LastName
             };
 
             try
             {
-                var result = await _userManager.CreateAsync(applicationUser, objRegistration.Password);
+                var result = await _userManager.CreateAsync(applicationUser, objRegistration.Email);
                 if (result.Errors.Count() == 0)
                 {
                     _userService.RegisterUserData(objRegistration);
@@ -79,8 +81,8 @@ namespace CosmosMW.Controllers
             try
             {
                 var user = await _userManager.FindByNameAsync(objLogin.Username);
-                if (user != null && await _userManager.CheckPasswordAsync(user, objLogin.Password))
-                {
+                //if (user != null && await _userManager.CheckPasswordAsync(user, objLogin.Email))
+                //{
                     var tokenDescriptor = new SecurityTokenDescriptor
                     {
                         //Subject = new ClaimsIdentity(new Claim[]
@@ -95,11 +97,11 @@ namespace CosmosMW.Controllers
                     var token = tokenHandler.WriteToken(securityToken);
 
                     return Ok(new { token });
-                }
-                else
-                {
-                    return BadRequest();
-                }
+                //}
+                //else
+                //{
+                    //return BadRequest();
+                //}
             }
             catch (Exception ex)
             {
@@ -115,5 +117,11 @@ namespace CosmosMW.Controllers
             return lstUserDetails;
         }
 
+        [HttpPost]
+        [Route("SendEmail")]
+        public void SendEmail(Message message)
+        {
+            _messageservice.SendEmail(message);
+        }
     }
 }
